@@ -1,1 +1,12 @@
-/* You can add global styles to this file, and also import other style files */
+.author-details,
+.author-form,
+.book-form,
+.delete-book-form,
+.author-edit-form,
+.book-edit-form,
+.book-index-form,
+.genres,
+.add-genre-form {
+    background-color: #f6f6f6;
+    border-radius: 4px;
+}
