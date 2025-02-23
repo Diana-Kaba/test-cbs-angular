@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Author } from '../classes/author';
+import { ListenersService } from './listeners.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthorsService {
 
-  constructor() { }
+  constructor(private listenersService: ListenersService) { }
 
   makeRows(authors: Author[]) {
     const authorTable = document.querySelector("tbody");
@@ -29,22 +30,86 @@ export class AuthorsService {
     });
   }
 
-  showAuthorDetails(authors: Author[], index: number) {
-    const author = authors[index];
-    console.log("Автор:", author);
-    const authorDetailsSection = document.querySelector(".author-details");
-    authorDetailsSection!.classList.remove("d-none");
-    authorDetailsSection!.setAttribute("data-author-index", index.toString());
+  makeRow(authors: Author[]) {
+    let i = authors.length - 1;
+    console.log(authors[i]);
+    const tbody = document.querySelector("tbody");
+    if(!tbody) return;
+    tbody.innerHTML += `
+    <tr>
+        <td>${authors[i].firstName} ${authors[i].lastName}</td>
+        <td>${authors[i].countOfBooks}</td>
+        <td>
+            <button class="btn btn-primary btn-details btn-sm" data-author-index="${i}">Деталі</button>
+            <button class="btn btn-primary btn-edit btn-sm" data-author-index="${i}">Редагувати</button>
+            <button class="btn btn-primary btn-delete btn-sm" data-author-index="${i}">Видалити</button>
+        </td>
+    </tr>`;
+    // addListeners(authors);
+  }
 
-    const authorName = document.getElementById("author-name");
-    const authorBirth = document.getElementById("author-birthyear");
-    const booksList = document.getElementById("author-books");
-    if (!authorName) return;
-    else if (!authorBirth) return;
-    else if (!booksList) return;
+  addAuthor(event: Event, authors: Author[]) {
+    event.preventDefault();
 
-    authorName.textContent = ` ${author.lastName} ${author.firstName} ${author.middleName || ''}`;
-    authorBirth.textContent = ` ${author.birthYear.toString()}`;
-    booksList.innerHTML = author.books.map((book, i) => `<li>"№${i} ${book.title}" - ${book.genre}, ${book.pages} сторінок</li>`).join("");
+    const lastName: HTMLInputElement | null = document.getElementById("author-lastname") as HTMLInputElement;
+    const firstName: HTMLInputElement | null = document.getElementById("author-firstname") as HTMLInputElement;
+    const middleName: HTMLInputElement | null = document.getElementById("author-middlename") as HTMLInputElement;
+    const yearDate: HTMLInputElement | null = document.getElementById("author-yearbirth") as HTMLInputElement;
+    if (!lastName) return;
+    else if (!firstName) return;
+    else if (!middleName) return;
+    else if (!yearDate) return;
+
+    const isValid = this.validateTextField(lastName.value.trim(), "^[А-Яа-яІіЇїЄєҐґA-Za-z\\s'-]{2,50}$", "Прізвище")
+      && this.validateTextField(firstName.value.trim(), "^[А-Яа-яІіЇїЄєҐґA-Za-z\\s'-]{2,50}$", "Ім'я")
+      && (middleName.value.trim() === '' || this.validateTextField(middleName.value.trim(), "^[А-Яа-яІіЇїЄєҐґA-Za-z\\s'-]{0,50}$", "По батькові"));
+
+    if (!isValid)
+      return;
+
+    if (+yearDate.value < 1500 || +yearDate.value > Number(new Date().getFullYear())) {
+      const errorYear = document.getElementById("error-year");
+      if (!errorYear) return;
+      errorYear.classList.remove("d-none");
+      return;
+    } else {
+      const errorYear = document.getElementById("error-year");
+      if (!errorYear) return;
+      errorYear.classList.add("d-none");
+    }
+
+    const newAuthor = new Author(lastName.value.trim(), firstName.value.trim(), +yearDate.value, middleName.value.trim());
+    authors.push(newAuthor);
+
+    // saveToLocalStorage(authors);
+    this.makeRow(authors);
+    this.populateAuthorDropdown(authors);
+    this.listenersService.addListeners(authors);
+
+    const authorFormContainer = document.querySelector(".author-form");
+    const authorForm: HTMLFormElement | null = document.querySelector("#author-form");
+    if (!authorFormContainer) return;
+    if (!authorForm) return;
+
+    authorFormContainer.classList.add("d-none");
+    authorForm.reset();
+  }
+
+  validateTextField(value: string, pattern: string, fieldName: string) {
+    const regex = new RegExp(pattern);
+    if (!regex.test(value.trim())) {
+      alert(`${fieldName} має невірний формат.`);
+      return false;
+    }
+    return true;
+  }
+
+  populateAuthorDropdown(authors: Author[]) {
+    const dropdown = document.getElementById("book-author");
+    if (!dropdown) return;
+
+    authors.forEach((author, index) => {
+      dropdown.innerHTML += `<option value="${index}">${author.firstName} ${author.lastName}</option>`;
+    });
   }
 }

@@ -3,6 +3,8 @@ import { AuthorsService } from './services/authors.service';
 import { Author } from './classes/author';
 import { Book } from './classes/books';
 import { Genre } from './classes/genre';
+import { DetailsService } from './services/details.service';
+import { FormsService } from './services/forms.service';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +18,10 @@ export class AppComponent {
   genres: Genre[] = [];
   books: Book[] = [];
 
-  constructor(private authorsService: AuthorsService) { }
+  constructor(
+    private authorsService: AuthorsService, 
+    private detailsService: DetailsService,
+    private formsService: FormsService ) { }
 
   fillStaticInfo() {
     const author1 = new Author("Шевченко", "Тарас", 1564, "Григорович");
@@ -53,8 +58,26 @@ export class AppComponent {
     document.querySelectorAll(".btn-details").forEach(btn => {
       btn.addEventListener('click', (event) => {
         const authorIndex = Number((event.currentTarget as HTMLElement).getAttribute("data-author-index"));
-        this.authorsService.showAuthorDetails(this.authors, authorIndex);
+        this.detailsService.showAuthorDetails(this.authors, authorIndex);
       });
     });
+
+    const btnHide = document.querySelector(".btn-hide");
+    if (!btnHide) return;
+    btnHide.addEventListener("click", this.detailsService.hideAuthorDetails);
+
+    const addAuthor = document.querySelector(".add-author");
+    if (!addAuthor) return;
+    addAuthor.addEventListener("click", this.formsService.showAuthorForm);
+
+    const hideAuthor = document.querySelector(".hide-author-form");
+    if (!hideAuthor) return;
+    hideAuthor.addEventListener("click", this.formsService.hideAuthorForm);
+
+    const authorForm = document.getElementById("author-form");
+    if(!authorForm) return;
+    authorForm.addEventListener("submit", (event) => {
+      this.authorsService.addAuthor(event, this.authors);
+  });
   }
 }
